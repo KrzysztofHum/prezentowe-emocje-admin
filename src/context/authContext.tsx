@@ -1,4 +1,4 @@
-// src/context/authContext.tsx
+// src/context/AuthContext.tsx
 import { ReactNode, useState } from "react";
 import { AuthContext } from "./AuthContextDef";
 
