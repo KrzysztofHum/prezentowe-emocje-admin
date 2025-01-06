@@ -1,77 +1,56 @@
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  TextField,
-  Typography,
-  Grid,
-  Checkbox,
-  FormControlLabel,
-  IconButton,
-} from "@mui/material";
-import { PhotoCamera } from "@mui/icons-material";
-import { useForm, Controller } from "react-hook-form";
+import { Box, Button, Container, Paper, Grid } from "@mui/material";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-
-// Schema yup validation
-const schema = yup
-  .object({
-    title: yup.string().required("Tytuł jest wymagany"),
-    size: yup.string().optional(),
-    price: yup
-      .number()
-      .required("Cena jest wymagana")
-      .positive("Cena musi być dodatnia"),
-    paper: yup.boolean().optional(),
-    envelope: yup.boolean().optional(),
-    collection: yup.boolean().optional(),
-    description: yup.string().optional(),
-    image: yup.mixed<File>().required("Zdjęcie jest wymagane"),
-    category: yup.string().optional(),
-  })
-  .required();
-
-interface FormData {
-  title: string;
-  size?: string;
-  price: number;
-  paper?: boolean;
-  envelope?: boolean;
-  collection?: boolean;
-  description?: string;
-  image: File;
-  category?: string;
-}
+import { useQuill } from "react-quilljs";
+import "quill/dist/quill.snow.css";
+import { schema } from "../utils/formSchema";
+import type { FormData } from "../utils/formSchema";
+import CheckboxComponent from "./forms/CheckboxComponent";
+import TextFieldComponent from "./forms/TextFieldComponent";
+import QuillEditorComponent from "./forms/QuillEditorComponent";
+import FileUploadComponent from "./forms/FileUploadComponent";
 
 const AddProductForm = () => {
   const {
     handleSubmit,
     control,
     formState: { errors },
+    setValue,
   } = useForm<FormData>({
     resolver: yupResolver(schema),
+    defaultValues: {
+      title: "",
+      size: "",
+      price: 0,
+      paper: false,
+      envelope: false,
+      collection: false,
+      description: "",
+      category: "",
+      image: undefined, // Handle as needed for files
+    },
   });
 
+  const { quill } = useQuill();
+
   const onSubmit = async (data: FormData) => {
-    const formData = new FormData();
-    formData.append("title", data.title);
-    formData.append("size", data.size || "");
-    formData.append("price", data.price.toString());
-    formData.append("paper", data.paper ? "true" : "false");
-    formData.append("envelope", data.envelope ? "true" : "false");
-    formData.append("collection", data.collection ? "true" : "false");
-    formData.append("description", data.description || "");
-    formData.append("category", data.category || "");
-    formData.append("image", data.image);
+    const formDataToSend = new FormData();
+    formDataToSend.append("title", data.title);
+    formDataToSend.append("size", data.size || "");
+    formDataToSend.append("price", data.price.toString());
+    formDataToSend.append("paper", data.paper ? "true" : "false");
+    formDataToSend.append("envelope", data.envelope ? "true" : "false");
+    formDataToSend.append("collection", data.collection ? "true" : "false");
+    formDataToSend.append("description", data.description || "");
+    formDataToSend.append("category", data.category || "");
+    formDataToSend.append("image", data.image);
 
     try {
       const response = await fetch(
         "http://localhost/prezentowe_emocje_backend/add_product.php",
         {
           method: "POST",
-          body: formData,
+          body: formDataToSend,
         }
       );
       const result = await response.json();
@@ -86,247 +65,78 @@ const AddProductForm = () => {
     }
   };
 
-  return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "grey.100", p: 4 }}>
-      <Container maxWidth="md">
-        <Paper elevation={3} sx={{ overflow: "hidden" }}>
-          <Box
-            sx={{
-              p: 3,
-              background: "linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)",
-              color: "white",
-            }}
-          >
-            <Typography variant="h4" component="h2" gutterBottom>
-              Dodaj Nowy Produkt
-            </Typography>
-            <Typography
-              variant="subtitle1"
-              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-            >
-              Wypełnij poniższy formularz, aby dodać nowy produkt do katalogu
-            </Typography>
-          </Box>
+  quill?.on("text-change", () => {
+    const content = quill.root.innerHTML;
+    setValue("description", content);
+  });
 
-          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 4 }}>
+  return (
+    <Box>
+      <Container maxWidth="md">
+        <Paper elevation={3}>
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Controller
+                <TextFieldComponent
                   name="title"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Tytuł"
-                      placeholder="Wprowadź tytuł produktu"
-                      error={!!errors.title}
-                      helperText={errors.title?.message}
-                    />
-                  )}
+                  label="Tytuł"
+                  placeholder="Wprowadź tytuł produktu"
+                  error={errors.title}
                 />
               </Grid>
-
               <Grid item xs={12} md={6}>
-                <Controller
+                <TextFieldComponent
                   name="size"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Rozmiar"
-                      placeholder="np. 10x15 cm"
-                    />
-                  )}
+                  label="Rozmiar"
+                  placeholder="np. 10x15 cm"
+                  error={errors.size}
                 />
               </Grid>
-
               <Grid item xs={12} md={6}>
-                <Controller
+                <TextFieldComponent
                   name="price"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      type="number"
-                      inputProps={{ step: "0.01" }}
-                      label="Cena"
-                      placeholder="0.00"
-                      error={!!errors.price}
-                      helperText={errors.price?.message}
-                    />
-                  )}
+                  label="Cena"
+                  type="number"
+                  placeholder="0.00"
+                  error={errors.price}
                 />
               </Grid>
-
               <Grid item xs={12} md={6}>
-                <Controller
+                <TextFieldComponent
                   name="category"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Kategoria"
-                      placeholder="Wybierz kategorię"
-                    />
-                  )}
+                  label="Kategoria"
+                  placeholder="Wybierz kategorię"
+                  error={errors.category}
                 />
               </Grid>
             </Grid>
-
-            <Paper sx={{ p: 3, mt: 3, bgcolor: "grey.50" }}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{ fontWeight: "medium" }}
-              >
-                Opcje dodatkowe
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="paper"
-                    control={control}
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={value}
-                            onChange={(e) => onChange(e.target.checked)}
-                            {...field}
-                          />
-                        }
-                        label="Papier"
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="envelope"
-                    control={control}
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={value}
-                            onChange={(e) => onChange(e.target.checked)}
-                            {...field}
-                          />
-                        }
-                        label="Koperta"
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <Controller
-                    name="collection"
-                    control={control}
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={value}
-                            onChange={(e) => onChange(e.target.checked)}
-                            {...field}
-                          />
-                        }
-                        label="Kolekcja"
-                      />
-                    )}
-                  />
-                </Grid>
-              </Grid>
-            </Paper>
-
-            <Box sx={{ mt: 3 }}>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Opis"
-                    placeholder="Wprowadź opis produktu..."
-                  />
-                )}
-              />
-            </Box>
-
-            <Box sx={{ mt: 3 }}>
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                sx={{ fontWeight: "medium" }}
-              >
-                Zdjęcie
-              </Typography>
-              <Controller
-                name="image"
-                control={control}
-                render={({ field: { onChange } }) => (
-                  <Box
-                    sx={{
-                      border: "2px dashed",
-                      borderColor: "grey.300",
-                      borderRadius: 1,
-                      p: 3,
-                      textAlign: "center",
-                      "&:hover": {
-                        borderColor: "primary.main",
-                        bgcolor: "grey.50",
-                      },
-                    }}
-                  >
-                    <input
-                      accept="image/*"
-                      type="file"
-                      onChange={(e) => onChange(e.target.files?.[0])}
-                      style={{ display: "none" }}
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload">
-                      <IconButton component="span" sx={{ mb: 1 }}>
-                        <PhotoCamera sx={{ fontSize: 40, color: "grey.500" }} />
-                      </IconButton>
-                      <Typography variant="body2" color="textSecondary">
-                        Wybierz zdjęcie
-                      </Typography>
-                    </label>
-                  </Box>
-                )}
-              />
-              {errors.image && (
-                <Typography color="error" variant="caption" sx={{ mt: 1 }}>
-                  {errors.image.message}
-                </Typography>
-              )}
-            </Box>
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              size="large"
-              sx={{
-                mt: 4,
-                py: 1.5,
-                background: "linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)",
-                "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #1565c0 30%, #7b1fa2 90%)",
-                },
-              }}
-            >
+            <CheckboxComponent name="paper" control={control} label="Papier" />
+            <CheckboxComponent
+              name="envelope"
+              control={control}
+              label="Koperta"
+            />
+            <CheckboxComponent
+              name="collection"
+              control={control}
+              label="Kolekcja"
+            />
+            <QuillEditorComponent
+              name="description"
+              control={control}
+              error={errors.description}
+              setValue={setValue}
+            />
+            <FileUploadComponent
+              name="image"
+              control={control}
+              error={errors.image}
+            />
+            <Button type="submit" variant="contained">
               Dodaj Produkt
             </Button>
           </Box>
