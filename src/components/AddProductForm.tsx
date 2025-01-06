@@ -8,9 +8,9 @@ import {
   Grid,
   Checkbox,
   FormControlLabel,
-  IconButton
-} from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material';
+  IconButton,
+} from "@mui/material";
+import { PhotoCamera } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -54,24 +54,56 @@ const AddProductForm = () => {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log("Form Data:", data);
-    // TODO: Add function to send data to backend
+  const onSubmit = async (data: FormData) => {
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("size", data.size || "");
+    formData.append("price", data.price.toString());
+    formData.append("paper", data.paper ? "true" : "false");
+    formData.append("envelope", data.envelope ? "true" : "false");
+    formData.append("collection", data.collection ? "true" : "false");
+    formData.append("description", data.description || "");
+    formData.append("category", data.category || "");
+    formData.append("image", data.image);
+
+    try {
+      const response = await fetch(
+        "http://localhost/prezentowe_emocje_backend/add_product.php",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Error adding product:", error);
+      alert("Wystąpił błąd podczas dodawania produktu");
+    }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.100', p: 4 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "grey.100", p: 4 }}>
       <Container maxWidth="md">
-        <Paper elevation={3} sx={{ overflow: 'hidden' }}>
-          <Box sx={{ 
-            p: 3, 
-            background: 'linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)',
-            color: 'white'
-          }}>
+        <Paper elevation={3} sx={{ overflow: "hidden" }}>
+          <Box
+            sx={{
+              p: 3,
+              background: "linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)",
+              color: "white",
+            }}
+          >
             <Typography variant="h4" component="h2" gutterBottom>
               Dodaj Nowy Produkt
             </Typography>
-            <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            >
               Wypełnij poniższy formularz, aby dodać nowy produkt do katalogu
             </Typography>
           </Box>
@@ -145,8 +177,12 @@ const AddProductForm = () => {
               </Grid>
             </Grid>
 
-            <Paper sx={{ p: 3, mt: 3, bgcolor: 'grey.50' }}>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
+            <Paper sx={{ p: 3, mt: 3, bgcolor: "grey.50" }}>
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                sx={{ fontWeight: "medium" }}
+              >
                 Opcje dodatkowe
               </Typography>
               <Grid container spacing={2}>
@@ -227,7 +263,11 @@ const AddProductForm = () => {
             </Box>
 
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                sx={{ fontWeight: "medium" }}
+              >
                 Zdjęcie
               </Typography>
               <Controller
@@ -236,27 +276,27 @@ const AddProductForm = () => {
                 render={({ field: { onChange } }) => (
                   <Box
                     sx={{
-                      border: '2px dashed',
-                      borderColor: 'grey.300',
+                      border: "2px dashed",
+                      borderColor: "grey.300",
                       borderRadius: 1,
                       p: 3,
-                      textAlign: 'center',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        bgcolor: 'grey.50'
-                      }
+                      textAlign: "center",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "grey.50",
+                      },
                     }}
                   >
                     <input
                       accept="image/*"
                       type="file"
                       onChange={(e) => onChange(e.target.files?.[0])}
-                      style={{ display: 'none' }}
+                      style={{ display: "none" }}
                       id="image-upload"
                     />
                     <label htmlFor="image-upload">
                       <IconButton component="span" sx={{ mb: 1 }}>
-                        <PhotoCamera sx={{ fontSize: 40, color: 'grey.500' }} />
+                        <PhotoCamera sx={{ fontSize: 40, color: "grey.500" }} />
                       </IconButton>
                       <Typography variant="body2" color="textSecondary">
                         Wybierz zdjęcie
@@ -280,10 +320,11 @@ const AddProductForm = () => {
               sx={{
                 mt: 4,
                 py: 1.5,
-                background: 'linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #1565c0 30%, #7b1fa2 90%)'
-                }
+                background: "linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #1565c0 30%, #7b1fa2 90%)",
+                },
               }}
             >
               Dodaj Produkt
